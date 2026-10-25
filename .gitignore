@@ -1,0 +1,9 @@
+# Office / Power BI temp files
+~$*
+*.tmp
+.pbi/cache.abf
+# OS
+.DS_Store
+Thumbs.db
+# Python
+__pycache__/
