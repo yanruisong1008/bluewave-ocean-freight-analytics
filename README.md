@@ -17,6 +17,7 @@ This project builds a single Power BI report that answers the questions those te
 2. **Delays**: Where do delays happen, how long are they, and what causes them?
 3. **Cost & Margin**: How are freight costs moving, what does a TEU cost on each lane, and which customers and lanes earn the best margin?
 4. **Volume**: Who are the largest customers by TEU, and how does actual volume compare with the 2026 budget?
+5. **Billing Cycle**: How many days pass from door delivery to invoice submission (policy: 30 days) and from invoice submission to payment (policy: 45 days)? Which customers and months break policy, and did the 2026 billing process improvement work?
 
 <!-- TODO (M1): refine these questions and add 1–2 of your own from real operations experience -->
 
@@ -29,6 +30,7 @@ All data is **synthetic**, generated with [`scripts/generate_data.py`](scripts/g
 | `data/raw/shipments/` | 21 monthly CSV files | ~2,900 shipments, Jan 2025 – Sep 2026 |
 | `data/raw/master_data.xlsx` | Excel, 4 sheets | Carriers, ports, customers, container types |
 | `data/raw/budget_2026.xlsx` | Excel, wide format | 2026 monthly TEU and revenue budget by destination region |
+| `data/raw/invoices.csv` | CSV (billing system export) | ~2,800 customer invoices: door delivery, invoice submitted, invoice paid |
 
 The raw files deliberately contain real-world data quality problems (inconsistent carrier names, mixed date locales, duplicates, text-formatted numbers, report-style headers). See [`docs/DATA_DICTIONARY.md`](docs/DATA_DICTIONARY.md).
 
@@ -46,7 +48,7 @@ The raw files deliberately contain real-world data quality problems (inconsisten
 
 ## Key DAX Measures
 
-<!-- TODO (M3): list 5–8 measures with a one-line purpose each, e.g. On-Time %, Avg Delay Days, Cost per TEU, Budget Variance % -->
+<!-- TODO (M3): list 5–8 measures with a one-line purpose each, e.g. On-Time %, Avg Delay Days, Cost per TEU, Budget Variance %, Avg Days to Invoice, Avg Days to Pay, % Invoices Over Policy -->
 
 | Measure | Purpose |
 |---|---|

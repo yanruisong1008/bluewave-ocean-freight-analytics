@@ -35,6 +35,26 @@ One row per shipment (booking). Files are split by booking month.
 
 Wide layout: one row per DestinationRegion × Metric (TEU, Revenue_USD), one column per month.
 
+## Invoices (`data/raw/invoices.csv`)
+
+One row per customer invoice, exported from the billing system. Links to Shipments by ShipmentID. Only shipments already delivered to the door appear.
+
+| Column | Type | Description |
+|---|---|---|
+| InvoiceID | Text | Unique invoice number |
+| ShipmentID | Text | Links to Shipments |
+| CustomerID | Text | Links to Customers sheet |
+| DoorDeliveredDate | Date | Cargo delivered to the customer's door (after ATA + drayage) |
+| InvoiceSubmittedAt | Date-time | Invoice submitted to customer (blank = not yet invoiced) |
+| InvoicePaidAt | Date-time | Payment received (blank = unpaid) |
+| InvoiceAmount | Decimal | Billed amount |
+| Currency | Text | Always USD |
+| PaymentTermsDays | Whole number | Payment term after submission (45) |
+| InvoiceStatus | Text | Not Invoiced, Open, Overdue, Disputed, Paid |
+| DisputeFlag | Text | Y if the customer disputed the invoice |
+
+**Business rules:** invoice must be submitted within 30 days of door delivery; customer must pay within 45 days of submission.
+
 ## Intentional Data Quality Issues
 
 These are planted on purpose so the Power Query work reflects real operations data.
@@ -50,3 +70,5 @@ These are planted on purpose so the Power Query work reflects real operations da
 | 7 | Report-style title rows above the real header | Customers sheet |
 | 8 | Months stored as columns (needs unpivoting) | Budget |
 | 9 | Blank ATD/ATA are valid (not yet sailed / in transit), not errors | Shipments |
+| 10 | Invoice dates carry a time stamp and must be converted to dates before calculating day differences | Invoices |
+| 11 | Blank InvoiceSubmittedAt / InvoicePaidAt are valid (not yet invoiced / unpaid), not errors | Invoices |

@@ -191,4 +191,59 @@ for row in ws.iter_rows(min_row=2, min_col=3):
     for c in row: c.number_format = "#,##0"
 wb.save(os.path.join(ROOT, "budget_2026.xlsx"))
 
-print(f"Shipments: {len(rows)} | monthly files: {len(by_month)} | duplicate rows injected: {len(dup_ids)}")
+# ---------------- invoices.csv (billing system export) ----------------
+# Policy: invoice submitted within 30 days of door delivery; customer pays within 45 days of submission.
+# Reality: most comply, some are fast, some slow. A billing process improvement starts Jan 2026.
+rng = random.Random(7)
+pay_profile = {}
+for c in customers:
+    base = {"Strategic": rng.choice([38, 48, 58]), "Key": rng.choice([30, 38, 46]), "Standard": rng.choice([24, 32, 40, 52])}[c[5]]
+    pay_profile[c[0]] = base
+inv_rows = []
+inv_no = 900001
+for r in rows:
+    if r["ATA"] is None:
+        continue
+    dest = r["DestinationPort"]
+    dray = rng.randint(2, 6) + (rng.randint(1, 4) if dest in ("USLAX", "USLGB", "USNYC") else 0)
+    door = r["ATA"] + timedelta(days=dray)
+    if door > TODAY:
+        continue
+    improved = door >= date(2026, 1, 1)
+    peak = door.month in (8, 9, 10)
+    roll = rng.random()
+    if roll < 0.10:                       # missing docs / rate disputes -> late billing
+        lag = rng.randint(31, 75)
+    elif roll < 0.30:
+        lag = rng.randint(1, 4)          # fast billers
+    else:
+        lag = int(rng.gauss(11 if improved else 16, 5))
+    if peak: lag += rng.randint(0, 6)
+    if improved and lag > 30 and rng.random() < 0.5: lag = rng.randint(18, 30)
+    lag = max(1, lag)
+    submitted = door + timedelta(days=lag)
+    dispute = rng.random() < 0.06
+    pay = int(rng.gauss(pay_profile[r["CustomerID"]], 9))
+    if dispute: pay += rng.randint(30, 80)
+    if rng.random() < 0.15: pay = rng.randint(7, 20)   # early payers
+    pay = max(3, pay)
+    paid = submitted + timedelta(days=pay)
+    if submitted > TODAY:
+        sub_v, paid_v, status = None, None, "Not Invoiced"
+    elif paid > TODAY:
+        sub_v, paid_v = submitted, None
+        status = "Disputed" if dispute else ("Overdue" if (TODAY - submitted).days > 45 else "Open")
+    else:
+        sub_v, paid_v, status = submitted, paid, "Paid"
+    def ts(d):
+        return "" if d is None else f"{d.isoformat()} {rng.randint(7,18):02d}:{rng.randint(0,59):02d}:{rng.randint(0,59):02d}"
+    inv_rows.append([f"INV{inv_no}", r["ShipmentID"], r["CustomerID"], door.isoformat(), ts(sub_v), ts(paid_v),
+                     f"{r['Revenue_USD']:.2f}", "USD", 45, status, "Y" if dispute else "N"])
+    inv_no += 1
+with open(os.path.join(ROOT, "invoices.csv"), "w", newline="", encoding="utf-8") as f:
+    w = csv.writer(f)
+    w.writerow(["InvoiceID","ShipmentID","CustomerID","DoorDeliveredDate","InvoiceSubmittedAt","InvoicePaidAt",
+                "InvoiceAmount","Currency","PaymentTermsDays","InvoiceStatus","DisputeFlag"])
+    w.writerows(inv_rows)
+
+print(f"Shipments: {len(rows)} | monthly files: {len(by_month)} | duplicate rows injected: {len(dup_ids)} | invoices: {len(inv_rows)}")
